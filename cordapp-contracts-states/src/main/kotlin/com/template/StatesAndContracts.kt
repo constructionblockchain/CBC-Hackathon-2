@@ -19,6 +19,10 @@ data class JobState(
         val developer: Party,
         val contractor: Party,
         val milestones: List<Milestone>,
+        // TODO:
+        // agreedAmount: Double,
+        // providisionalSum: Double,
+        // retentionPercentage: Double
         override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
 
     init {
@@ -41,6 +45,12 @@ data class JobState(
 data class Milestone(
         val description: String,
         val amount: Amount<Currency>,
+        // TODO:
+        // expectedEndDate: Date,
+        // percentageComplete: Double,
+        // paymentOnAccount: Double,
+        // actualPayment: Double
+        // agreedPayment: Double
         val status: MilestoneStatus = MilestoneStatus.UNSTARTED)
 
 @CordaSerializable
