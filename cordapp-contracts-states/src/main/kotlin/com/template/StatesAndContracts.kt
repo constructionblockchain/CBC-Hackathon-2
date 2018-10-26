@@ -45,10 +45,10 @@ data class JobState(
 data class Milestone(
         val description: String,
         val amount: Amount<Currency>,
+        val paymentOnAccount:  Amount<Currency> = Amount.zero(amount.token),
         // TODO:
         // expectedEndDate: Date,
         // percentageComplete: Double,
-        // paymentOnAccount: Double,
         // actualPayment: Double
         // agreedPayment: Double
         val status: MilestoneStatus = MilestoneStatus.UNSTARTED)
