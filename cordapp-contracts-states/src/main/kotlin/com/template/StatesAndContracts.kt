@@ -58,6 +58,43 @@ data class Milestone(
 @CordaSerializable
 enum class MilestoneStatus { UNSTARTED, STARTED, COMPLETED, ACCEPTED, PAID, ON_ACCOUNT_PAYMENT }
 
+@CordaSerializable
+data class DocumentState(
+    val name :   String,
+    val description:  String,
+    val type :  DocumentType,
+    val issuer : Party,
+    override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
+        override val participants = listOf(issuer)
+    }
+
+@CordaSerializable
+enum class DocumentType { SURVEY }
+
+class DocumentContract : Contract {
+    companion object {
+        const val DOCUMENT_CONTRACT_ID = "com.template.DocumentContract"
+    }
+
+    interface Commands : CommandData {
+        class AddDocument : Commands
+    }
+
+    override fun verify(tx: LedgerTransaction) {
+        val documentCommand = tx.commandsOfType<DocumentContract.Commands>().single()
+        val documentInputs = tx.inputsOfType<JobState>()
+
+        when (documentCommand.value) {
+            is Commands.AddDocument -> requireThat {
+                "There should be no input states consumed" using (documentInputs.isEmpty())
+                "There should be one output state" using (tx.outputsOfType<DocumentState>().size == 1)
+            }
+        }
+
+    }
+}
+
+
 /**
  * Governs the evolution of [JobState]s.
  */

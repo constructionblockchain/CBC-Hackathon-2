@@ -4,8 +4,10 @@ import com.template.JobContract
 import com.template.JobState
 import com.template.Milestone
 import com.template.MilestoneStatus
+import net.corda.core.contracts.Amount
 import net.corda.core.identity.CordaX500Name
 import net.corda.finance.DOLLARS
+import net.corda.finance.GBP
 import net.corda.finance.POUNDS
 import net.corda.finance.contracts.asset.Cash
 import net.corda.finance.issuedBy
@@ -20,7 +22,7 @@ class PayMilestoneCommandTests {
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
     private val participants = listOf(developer.publicKey)
-    private val acceptedMilestone = Milestone("Fit windows.", fitWindowsCost, MilestoneStatus.ACCEPTED)
+    private val acceptedMilestone = Milestone("Fit windows.", fitWindowsCost, Amount.zero(GBP) ,MilestoneStatus.ACCEPTED)
     private val paidMilestone = acceptedMilestone.copy(status = MilestoneStatus.PAID)
     private val otherMilestone = Milestone("Fit doors", 50.DOLLARS)
     private val acceptedJobState = JobState(

@@ -4,11 +4,14 @@ import com.template.JobContract
 import com.template.JobState
 import com.template.Milestone
 import com.template.MilestoneStatus
+import net.corda.core.contracts.Amount
 import net.corda.core.identity.CordaX500Name
 import net.corda.finance.DOLLARS
+import net.corda.finance.GBP
 import net.corda.testing.core.TestIdentity
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.ledger
+import org.apache.shiro.authc.Account
 import org.junit.Test
 
 class RejectMilestoneCommandTests {
@@ -16,7 +19,7 @@ class RejectMilestoneCommandTests {
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
     private val participants = listOf(developer.publicKey)
-    private val completedMilestone = Milestone("Fit windows.", 100.DOLLARS, MilestoneStatus.COMPLETED)
+    private val completedMilestone = Milestone("Fit windows.", 100.DOLLARS, Amount.zero(GBP), MilestoneStatus.COMPLETED)
     private val startedMilestone = completedMilestone.copy(status = MilestoneStatus.STARTED)
     private val otherMilestone = Milestone("Fit doors", 50.DOLLARS)
     private val completedJobState = JobState(
