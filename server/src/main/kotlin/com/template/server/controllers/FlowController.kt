@@ -1,5 +1,7 @@
 package com.template.server.controllers
 
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.template.*
 import com.template.server.NodeRPCConnection
 import net.corda.core.contracts.Amount
@@ -22,27 +24,27 @@ class FlowController(rpc: NodeRPCConnection) {
     }
 
     private val proxy = rpc.proxy
+    private val gson = Gson()
 
     @PostMapping(value = "/agreejob")
-    private fun agreeJob(@RequestBody() jsonBody :String): ResponseEntity<*> {
+    private fun agreeJob(
+            // You pass these lists in the POST body as follows: Description one., Description two., etc.
+            // No need for square brackets, enclosing quotes, etc.
+           /*@RequestParam("milestone-descriptions") milestoneDescriptions: List<String>,
+            @RequestParam("milestone-quantities") milestoneQuantities: List<String>,
+            @RequestParam("milestone-currency") milestoneCurrency: String,
+            @RequestParam("contractor") contractorName: String,
+            @RequestParam("notary") notaryName: String*/
+            @RequestBody() jsonBody :String
+    ): ResponseEntity<*> {
         var fromJson = gson.fromJson<Map<String, Any>>(jsonBody, object : TypeToken<Map<String, Any>>() {}.type)
-        val contractorName = fromJson["contractor"].toString()
-        val notaryName = fromJson["notary"].toString()
-        val contractAmount = fromJson["contractAmount"].toString().toDoubleOrNull()
-        val retentionPercentage = fromJson["retentionPercentage"].toString().toDoubleOrNull()
-        val allowPaymentOnAccount = fromJson["allowPaymentOnAccount"].toString().toBoolean()
-
-        var milestoneJson : List<Map<String,String>> =  fromJson["milestones"] as List<Map<String,String>>
+        val contractorName = fromJson.get("contractor") as String
+        val notaryName = fromJson.get("notary") as String
+        var milestoneJson : List<Map<String,String>> =  fromJson.get("milestones") as List<Map<String,String>>
 
         val milestones = milestoneJson.map { milestone ->
-            val reference = milestone["reference"].toString()
-            val quantity = milestone["amount"].toString()
-            val description = milestone["description"].toString()
-            val expectedEndDateString = milestone["expectedEndDate"]
-            val expectedEndDate = LocalDate.parse(expectedEndDateString, DateTimeFormatter.ISO_DATE)
-            val amount = Amount(quantity.toLong(), Currency.getInstance(milestone["currency"]))
-            val remarks = milestone["remarks"].toString()
-            Milestone(reference=reference, description=description, amount=amount, expectedEndDate=expectedEndDate, remarks=remarks)
+            val amount = Amount(milestone.get("amount")!!.toLong(), Currency.getInstance(milestone.get("currency")))
+            Milestone(milestone.get("description") as String, amount)
         }
 
         val contractor = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(contractorName))
@@ -51,12 +53,25 @@ class FlowController(rpc: NodeRPCConnection) {
                 ?: return ResponseEntity<Any>("Notary $notaryName not found on network.", HttpStatus.INTERNAL_SERVER_ERROR)
 
         val linearId = proxy.startFlowDynamic(AgreeJobFlow::class.java, milestones, contractor, notary).returnValue.get()
-*/
-    //    return ResponseEntity<Any>("New job created with ID ${linearId.id}.", HttpStatus.CREATED)
 
+        return ResponseEntity<Any>("New job created with ID ${linearId.id}.", HttpStatus.CREATED)
 
-        return ResponseEntity<Any>("New job created with ID $body", HttpStatus.CREATED)
+      /*  val descriptionsAndQuantities = milestoneDescriptions.zip(milestoneQuantities)
 
+        val milestones = descriptionsAndQuantities.map { (description, quantity) ->
+            val amount = Amount(quantity.toLong(), Currency.getInstance(milestoneCurrency))
+            Milestone(description, amount)
+        }
+
+        val contractor = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(contractorName))
+                ?: return ResponseEntity<Any>("Contractor $contractorName not found on network.", HttpStatus.INTERNAL_SERVER_ERROR)
+        val notary = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(notaryName))
+                ?: return ResponseEntity<Any>("Notary $notaryName not found on network.", HttpStatus.INTERNAL_SERVER_ERROR)
+
+        val linearId = proxy.startFlowDynamic(AgreeJobFlow::class.java, milestones, contractor, notary).returnValue.get()
+        return ResponseEntity<Any>("New job created with ID ${linearId.id}.", HttpStatus.CREATED)
+      */
+        //    return ResponseEntity<Any>("New job created with ID $body", HttpStatus.CREATED)
     }
 
     @PostMapping(value = "/startmilestone")

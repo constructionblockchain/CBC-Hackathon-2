@@ -1,0 +1,16 @@
+{
+  "contractor": "O=PartyB,L=New York,C=US",
+  "notary": "O=Notary,L=London,C=GB",
+  "milestones": [
+    {
+      "amount": "10000",
+      "description": "milestone1",
+      "currency": "GBP"
+    },
+    {
+      "amount": "20000",
+      "description": "milestone2",
+      "currency": "GBP"
+    }
+  ]
+}
