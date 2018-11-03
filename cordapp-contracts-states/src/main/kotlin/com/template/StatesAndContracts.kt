@@ -1,12 +1,10 @@
 package com.template
 
 import net.corda.core.contracts.*
-import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.finance.contracts.asset.Cash
-import java.time.LocalDate
 import java.util.*
 
 /**
@@ -21,6 +19,7 @@ data class JobState(
         val developer: Party,
         val contractor: Party,
         val milestones: List<Milestone>,
+       /*
         val contractAmount: Double,  //the total agreement amount to complete the job
         val retentionPercentage: Double, //how much must be retained based on the invoice submitted
         val grossCumulativeAmount: Double, //total amount of money we valued so far for completed milestones or milestones with payment on accounts
@@ -28,6 +27,7 @@ data class JobState(
         val allowPaymentOnAccounts: Boolean, //does the job allow for payment on accounts to be made
         val netCumulativeValue: Double, // grossCumulativeAmount minus retentionAmount
         val previousCumulativeValue: Double, // netCumulativeValue (previous) - netCumulativeValue (current) (Valuation)
+        */
         override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
 
     init {
@@ -50,13 +50,13 @@ data class JobState(
 data class Milestone(
         val description: String,
         val amount: Amount<Currency>,
-        val expectedEndDate: Date,
+     /*   val expectedEndDate: Date,
         val percentageComplete: Double,
         val requestedAmount: Amount<Currency>, //amount as per invoice/payment application from the contractor
         val paymentOnAccount: Amount<Currency>, //how much payment on account has been paid out (payment valuation)
         val netMilestonePayment: Amount<Currency>, //calculated based on milestone amount/payment on account less retention percentage
         val documentsRequired : List<SecureHash>,
-        val remarks: String,
+        val remarks: String,*/
         val status: MilestoneStatus = MilestoneStatus.NOT_STARTED)
 
 @CordaSerializable

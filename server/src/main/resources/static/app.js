@@ -1,11 +1,12 @@
 "use strict";
 
 // Define your client-side logic here.
-<script type="text/javascript">
 $('form').submit(function(e) {
     var $form = $(this);
     var url = $form.attr('action');
-
+    console.log("hello");
+    console.log("form data [" + $form.serialize() + "]");
+    console.log( toJSONString(this));
     $.ajax({
            type: 'POST',
            url: url,
@@ -22,3 +23,19 @@ $('form').submit(function(e) {
 
     e.preventDefault();
 });
+
+function toJSONString( form ) {
+    var obj = {};
+    var elements = form.querySelectorAll( "input" );
+    for( var i = 0; i < elements.length; ++i ) {
+        var element = elements[i];
+        var name = element.name;
+        var value = element.value;
+
+        if( name ) {
+            obj[ name ] = value;
+        }
+    }
+
+    return JSON.stringify( obj );
+}

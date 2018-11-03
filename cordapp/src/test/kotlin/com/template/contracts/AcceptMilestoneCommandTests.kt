@@ -18,7 +18,7 @@ class AcceptMilestoneCommandTests {
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
     private val participants = listOf(developer.publicKey)
-    private val completedMilestone = Milestone("Fit windows.", 100.DOLLARS, Amount.zero(GBP) , MilestoneStatus.COMPLETED)
+    private val completedMilestone = Milestone("Fit windows.", 100.DOLLARS,  MilestoneStatus.COMPLETED)
     private val acceptedMilestone = completedMilestone.copy(status = MilestoneStatus.ACCEPTED)
     private val otherMilestone = Milestone("Fit doors", 50.DOLLARS)
     private val completedJobState = JobState(

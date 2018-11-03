@@ -27,19 +27,18 @@ class FlowController(rpc: NodeRPCConnection) {
     private fun agreeJob(
             // You pass these lists in the POST body as follows: Description one., Description two., etc.
             // No need for square brackets, enclosing quotes, etc.
-            @RequestParam("milestone-descriptions") milestoneDescriptions: List<String>,
+           /*@RequestParam("milestone-descriptions") milestoneDescriptions: List<String>,
             @RequestParam("milestone-quantities") milestoneQuantities: List<String>,
-            @RequestParam("milestone-endDates") milestoneEndDates: List<String>,
             @RequestParam("milestone-currency") milestoneCurrency: String,
             @RequestParam("contractor") contractorName: String,
-            @RequestParam("notary") notaryName: String
+            @RequestParam("notary") notaryName: String*/
+            @RequestBody() body :String
     ): ResponseEntity<*> {
-        val descriptionsAndQuantities = milestoneDescriptions.zip(milestoneQuantities)
-        val  milestoneMap = mapOf<>()
+      /*  val descriptionsAndQuantities = milestoneDescriptions.zip(milestoneQuantities)
 
         val milestones = descriptionsAndQuantities.map { (description, quantity) ->
             val amount = Amount(quantity.toLong(), Currency.getInstance(milestoneCurrency))
-            Milestone(description, amount, milestonesEndDate)
+            Milestone(description, amount)
         }
 
         val contractor = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(contractorName))
@@ -48,8 +47,12 @@ class FlowController(rpc: NodeRPCConnection) {
                 ?: return ResponseEntity<Any>("Notary $notaryName not found on network.", HttpStatus.INTERNAL_SERVER_ERROR)
 
         val linearId = proxy.startFlowDynamic(AgreeJobFlow::class.java, milestones, contractor, notary).returnValue.get()
+*/
+    //    return ResponseEntity<Any>("New job created with ID ${linearId.id}.", HttpStatus.CREATED)
 
-        return ResponseEntity<Any>("New job created with ID ${linearId.id}.", HttpStatus.CREATED)
+
+        return ResponseEntity<Any>("New job created with ID $body", HttpStatus.CREATED)
+
     }
 
     @PostMapping(value = "/startmilestone")
