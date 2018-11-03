@@ -2,7 +2,7 @@ see to explain structure
 - https://docs.corda.net/tutorial-cordapp.html
 
 - ./gradlew deployNodes
-- kotlin-source/build/nodes/runnodes (using terminal)
+- build/nodes/runnodes (using terminal)
     - starts three nodes notary,PartyA and PartyB
 - start webServers PartyA and Party B Servers via Intellij Debug mode          
 

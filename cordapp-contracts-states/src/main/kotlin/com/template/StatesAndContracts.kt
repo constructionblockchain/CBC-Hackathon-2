@@ -6,6 +6,7 @@ import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.finance.contracts.asset.Cash
+import java.time.LocalDate
 import java.util.*
 
 /**
@@ -22,8 +23,11 @@ data class JobState(
         val milestones: List<Milestone>,
         val contractAmount: Double,  //the total agreement amount to complete the job
         val retentionPercentage: Double, //how much must be retained based on the invoice submitted
-        val cumulativeAmount: Double, //amount of money paid out so far for completed milestones or milestones with payment on accounts
+        val grossCumulativeAmount: Double, //total amount of money we valued so far for completed milestones or milestones with payment on accounts
+        val retentionAmount: Double, //amount retained so far
         val allowPaymentOnAccounts: Boolean, //does the job allow for payment on accounts to be made
+        val netCumulativeValue: Double, // grossCumulativeAmount minus retentionAmount
+        val previousCumulativeValue: Double, // netCumulativeValue (previous) - netCumulativeValue (current) (Valuation)
         override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
 
     init {
@@ -45,7 +49,7 @@ data class JobState(
 @CordaSerializable
 data class Milestone(
         val description: String,
-        val amount: Amount<Currency>, //milestone value
+        val amount: Amount<Currency>,
         val expectedEndDate: Date,
         val percentageComplete: Double,
         val requestedAmount: Amount<Currency>, //amount as per invoice/payment application from the contractor
@@ -53,10 +57,10 @@ data class Milestone(
         val netMilestonePayment: Amount<Currency>, //calculated based on milestone amount/payment on account less retention percentage
         val documentsRequired : List<SecureHash>,
         val remarks: String,
-        val status: MilestoneStatus = MilestoneStatus.UNSTARTED)
+        val status: MilestoneStatus = MilestoneStatus.NOT_STARTED)
 
 @CordaSerializable
-enum class MilestoneStatus { UNSTARTED, STARTED, COMPLETED, ACCEPTED, PAID, ON_ACCOUNT_PAYMENT }
+enum class MilestoneStatus { NOT_STARTED, STARTED, COMPLETED, ACCEPTED, PAID }
 
 @CordaSerializable
 data class DocumentState(
@@ -126,7 +130,7 @@ class JobContract : Contract {
                 val jobOutput = jobOutputs.single()
                 "The developer and the contractor should be different parties." using (jobOutput.contractor != jobOutput.developer)
                 "All the milestones should be unstarted." using
-                        (jobOutput.milestones.all { it.status == MilestoneStatus.UNSTARTED })
+                        (jobOutput.milestones.all { it.status == MilestoneStatus.NOT_STARTED })
 
                 "The developer and contractor should be required signers." using
                         (jobCommand.signers.containsAll(listOf(jobOutput.contractor.owningKey, jobOutput.developer.owningKey)))
@@ -142,8 +146,8 @@ class JobContract : Contract {
                 val inputModifiedMilestone = jobInput.milestones[milestoneIndex]
                 val outputModifiedMilestone = jobOutput.milestones[milestoneIndex]
 
-                "The modified milestone should have an input status of UNSTARTED." using
-                        (inputModifiedMilestone.status == MilestoneStatus.UNSTARTED)
+                "The modified milestone should have an input status of NOT_STARTED." using
+                        (inputModifiedMilestone.status == MilestoneStatus.NOT_STARTED)
                 "The modified milestone should have an output status of STARTED." using
                         (outputModifiedMilestone.status == MilestoneStatus.STARTED)
                 "The modified milestone's description and amount shouldn't change." using

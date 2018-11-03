@@ -29,15 +29,17 @@ class FlowController(rpc: NodeRPCConnection) {
             // No need for square brackets, enclosing quotes, etc.
             @RequestParam("milestone-descriptions") milestoneDescriptions: List<String>,
             @RequestParam("milestone-quantities") milestoneQuantities: List<String>,
+            @RequestParam("milestone-endDates") milestoneEndDates: List<String>,
             @RequestParam("milestone-currency") milestoneCurrency: String,
             @RequestParam("contractor") contractorName: String,
             @RequestParam("notary") notaryName: String
     ): ResponseEntity<*> {
         val descriptionsAndQuantities = milestoneDescriptions.zip(milestoneQuantities)
+        val  milestoneMap = mapOf<>()
 
         val milestones = descriptionsAndQuantities.map { (description, quantity) ->
             val amount = Amount(quantity.toLong(), Currency.getInstance(milestoneCurrency))
-            Milestone(description, amount)
+            Milestone(description, amount, milestonesEndDate)
         }
 
         val contractor = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(contractorName))

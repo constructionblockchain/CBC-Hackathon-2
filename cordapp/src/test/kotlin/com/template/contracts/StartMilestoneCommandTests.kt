@@ -82,7 +82,7 @@ class StartMilestoneCommandTests {
                 command(participants, JobContract.Commands.StartMilestone(milestoneIndex))
                 input(JobContract.ID, startedJobState)
                 output(JobContract.ID, startedJobState)
-                failsWith("The modified milestone should have an input status of UNSTARTED.")
+                failsWith("The modified milestone should have an input status of NOT_STARTED.")
             }
         }
     }

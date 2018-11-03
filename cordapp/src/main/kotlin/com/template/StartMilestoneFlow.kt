@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
-import net.corda.core.node.services.Vault
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
@@ -13,7 +12,7 @@ import net.corda.core.utilities.ProgressTracker
 import java.lang.IllegalStateException
 
 /**
- * Change the status of a [Milestone] in a [JobState] from [MilestoneStatus.UNSTARTED] to [MilestoneStatus.STARTED].
+ * Change the status of a [Milestone] in a [JobState] from [MilestoneStatus.NOT_STARTED] to [MilestoneStatus.STARTED].
  *
  * Should be run by the contractor.
  *
