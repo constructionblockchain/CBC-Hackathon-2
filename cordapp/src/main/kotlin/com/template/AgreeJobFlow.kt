@@ -21,15 +21,23 @@ import net.corda.core.utilities.ProgressTracker
  */
 @InitiatingFlow
 @StartableByRPC
-class AgreeJobFlow(val milestones: List<Milestone>,
-                   val contractor: Party,
+class AgreeJobFlow(val contractor: Party,
+                   val contractAmount : Double,
+                   val retentionPercentage : Double,
+                   val allowPaymentOnAccount : Boolean,
+                   val milestones: List<Milestone>,
                    val notaryToUse: Party) : FlowLogic<UniqueIdentifier>() {
 
     override val progressTracker = ProgressTracker()
 
     @Suspendable
     override fun call(): UniqueIdentifier {
-        val jobState = JobState(ourIdentity, contractor, milestones)
+        var jobState = JobState(developer = ourIdentity,
+                contractor = contractor,
+                contractAmount = contractAmount,
+                retentionPercentage = retentionPercentage,
+                allowPaymentOnAccount = allowPaymentOnAccount,
+                milestones = milestones)
 
         val agreeJobCommand = Command(
                 JobContract.Commands.AgreeJob(),

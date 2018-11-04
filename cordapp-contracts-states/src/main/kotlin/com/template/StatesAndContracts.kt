@@ -6,6 +6,7 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.finance.POUNDS
 import net.corda.finance.contracts.asset.Cash
+import java.time.LocalDate
 import java.util.*
 
 /**
@@ -19,16 +20,14 @@ import java.util.*
 data class JobState(
         val developer: Party,
         val contractor: Party,
-        val milestones: List<Milestone>,
-       /*
         val contractAmount: Double,  //the total agreement amount to complete the job
         val retentionPercentage: Double, //how much must be retained based on the invoice submitted
-        val grossCumulativeAmount: Double, //total amount of money we valued so far for completed milestones or milestones with payment on accounts
-        val retentionAmount: Double, //amount retained so far
-        val allowPaymentOnAccounts: Boolean, //does the job allow for payment on accounts to be made
-        val netCumulativeValue: Double, // grossCumulativeAmount minus retentionAmount
-        val previousCumulativeValue: Double, // netCumulativeValue (previous) - netCumulativeValue (current) (Valuation)
-        */
+        val allowPaymentOnAccount: Boolean, //does the job allow for payment on accounts to be made
+        val grossCumulativeAmount: Double = 0.0, //total amount of money we valued so far for completed milestones or milestones with payment on accounts
+        val retentionAmount: Double = 0.0, //amount retained so far
+        val netCumulativeValue: Double = 0.0, // grossCumulativeAmount minus retentionAmount
+        val previousCumulativeValue: Double = 0.0, // netCumulativeValue (previous) - netCumulativeValue (current) (Valuation)
+        val milestones: List<Milestone>,
         override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
 
     init {
@@ -49,15 +48,17 @@ data class JobState(
  */
 @CordaSerializable
 data class Milestone(
+        /** Which variables are constant and which change over time/event*/
+        val reference: String,
         val description: String,
-        val amount: Amount<Currency>, //milestone value
+        val amount: Amount<Currency>,
         val expectedEndDate: LocalDate,
-        val percentageComplete: Double = 0.0,
-        val requestedAmount: Amount<Currency> = 0.POUNDS, //amount as per invoice/payment application from the contractor
-        val paymentOnAccount: Amount<Currency> = 0.POUNDS, //how much payment on account has been paid out (payment valuation)
-        val netMilestonePayment: Amount<Currency> = 0.POUNDS, //calculated based on milestone amount/payment on account less retention percentage
-        val documentsRequired : List<SecureHash> = listOf<SecureHash>(),
+      /*  val netMilestonePayment: Amount<Currency>, //calculated based on milestone amount/payment on account less retention percentage
+        val requestedAmount: Amount<Currency>, //amount as per invoice/payment application from the contractor
+        val paymentOnAccount: Amount<Currency>, //how much payment on account has been paid out (payment valuation)
+        val percentageComplete: Double,*/
         val remarks: String,
+      //  val documentsRequired : List<SecureHash>,
         val status: MilestoneStatus = MilestoneStatus.NOT_STARTED)
 
 @CordaSerializable

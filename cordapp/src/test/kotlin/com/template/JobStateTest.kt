@@ -1,11 +1,7 @@
 package com.template
 
-import com.beust.klaxon.Klaxon
-import com.beust.klaxon.KlaxonJson
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import net.corda.finance.POUNDS
-import net.corda.testing.internal.chooseIdentity
 import net.corda.testing.node.MockNetwork
 import org.junit.Test
 import kotlin.test.assertEquals

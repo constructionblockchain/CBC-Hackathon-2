@@ -1,16 +1,29 @@
 {
   "contractor": "O=PartyB,L=New York,C=US",
   "notary": "O=Notary,L=London,C=GB",
-  "milestones": [
-    {
-      "amount": "10000",
-      "description": "milestone1",
-      "currency": "GBP"
-    },
-    {
-      "amount": "20000",
-      "description": "milestone2",
-      "currency": "GBP"
-    }
-  ]
+  "contractAmount" : "10000",
+  "retentionPercentage" : "0.2",
+  "allowPaymentOnAccount" : "true",
+  "milestones": [{
+      "reference" : "M1",
+      "amount": "30000",
+      "description": "foundations and ground floor",
+      "currency": "GBP",
+      "expectedEndDate" : "2018-12-01",
+      "remarks" : "how deep should the foundations be?"
+    },{
+      "reference" : "M2",
+      "amount": "30000",
+      "description": "walls",
+      "currency": "GBP",
+      "expectedEndDate" : "2019-01-01",
+      "remarks" : "what colour paint to use."
+    },{
+      "reference" : "M3",
+      "amount": "40000",
+      "description": "roof",
+      "currency": "GBP",
+      "expectedEndDate" : "2019-02-01",
+      "remarks" : "dormer?"
+    }]
 }
