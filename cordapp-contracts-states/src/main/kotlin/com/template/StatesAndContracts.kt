@@ -53,12 +53,12 @@ data class Milestone(
         val reference: String,
         val description: String,
         val amount: Amount<Currency>, //milestone value
-        val expectedEndDate: Date,
-        val percentageComplete: Double,
-        val requestedAmount: Amount<Currency>, //amount as per invoice/payment application from the contractor
-        val paymentOnAccount: Amount<Currency>, //how much payment on account has been paid out (payment valuation)
-        val netMilestonePayment: Amount<Currency>, //calculated based on milestone amount/payment on account less retention percentage
-        val documentsRequired : List<SecureHash>,
+        val expectedEndDate: LocalDate,
+        val percentageComplete: Double = 0.0,
+        val requestedAmount: Amount<Currency> = 0.POUNDS, //amount as per invoice/payment application from the contractor
+        val paymentOnAccount: Amount<Currency> = 0.POUNDS, //how much payment on account has been paid out (payment valuation)
+        val netMilestonePayment: Amount<Currency> = 0.POUNDS, //calculated based on milestone amount/payment on account less retention percentage
+        val documentsRequired : List<SecureHash> = listOf<SecureHash>(),
         val remarks: String,
         val status: MilestoneStatus = MilestoneStatus.NOT_STARTED)
 
