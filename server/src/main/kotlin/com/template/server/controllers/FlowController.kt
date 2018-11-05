@@ -24,21 +24,25 @@ class FlowController(rpc: NodeRPCConnection) {
     private val proxy = rpc.proxy
 
     @PostMapping(value = "/agreejob")
-    private fun agreeJob(
-            // You pass these lists in the POST body as follows: Description one., Description two., etc.
-            // No need for square brackets, enclosing quotes, etc.
-           /*@RequestParam("milestone-descriptions") milestoneDescriptions: List<String>,
-            @RequestParam("milestone-quantities") milestoneQuantities: List<String>,
-            @RequestParam("milestone-currency") milestoneCurrency: String,
-            @RequestParam("contractor") contractorName: String,
-            @RequestParam("notary") notaryName: String*/
-            @RequestBody() body :String
-    ): ResponseEntity<*> {
-      /*  val descriptionsAndQuantities = milestoneDescriptions.zip(milestoneQuantities)
+    private fun agreeJob(@RequestBody() jsonBody :String): ResponseEntity<*> {
+        var fromJson = gson.fromJson<Map<String, Any>>(jsonBody, object : TypeToken<Map<String, Any>>() {}.type)
+        val contractorName = fromJson["contractor"].toString()
+        val notaryName = fromJson["notary"].toString()
+        val contractAmount = fromJson["contractAmount"].toString().toDoubleOrNull()
+        val retentionPercentage = fromJson["retentionPercentage"].toString().toDoubleOrNull()
+        val allowPaymentOnAccount = fromJson["allowPaymentOnAccount"].toString().toBoolean()
 
-        val milestones = descriptionsAndQuantities.map { (description, quantity) ->
-            val amount = Amount(quantity.toLong(), Currency.getInstance(milestoneCurrency))
-            Milestone(description, amount)
+        var milestoneJson : List<Map<String,String>> =  fromJson["milestones"] as List<Map<String,String>>
+
+        val milestones = milestoneJson.map { milestone ->
+            val reference = milestone["reference"].toString()
+            val quantity = milestone["amount"].toString()
+            val description = milestone["description"].toString()
+            val expectedEndDateString = milestone["expectedEndDate"]
+            val expectedEndDate = LocalDate.parse(expectedEndDateString, DateTimeFormatter.ISO_DATE)
+            val amount = Amount(quantity.toLong(), Currency.getInstance(milestone["currency"]))
+            val remarks = milestone["remarks"].toString()
+            Milestone(reference=reference, description=description, amount=amount, expectedEndDate=expectedEndDate, remarks=remarks)
         }
 
         val contractor = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(contractorName))

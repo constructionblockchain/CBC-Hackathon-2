@@ -4,6 +4,7 @@ import net.corda.core.contracts.*
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.LedgerTransaction
+import net.corda.finance.POUNDS
 import net.corda.finance.contracts.asset.Cash
 import java.util.*
 
@@ -49,14 +50,14 @@ data class JobState(
 @CordaSerializable
 data class Milestone(
         val description: String,
-        val amount: Amount<Currency>,
-     /*   val expectedEndDate: Date,
-        val percentageComplete: Double,
-        val requestedAmount: Amount<Currency>, //amount as per invoice/payment application from the contractor
-        val paymentOnAccount: Amount<Currency>, //how much payment on account has been paid out (payment valuation)
-        val netMilestonePayment: Amount<Currency>, //calculated based on milestone amount/payment on account less retention percentage
-        val documentsRequired : List<SecureHash>,
-        val remarks: String,*/
+        val amount: Amount<Currency>, //milestone value
+        val expectedEndDate: LocalDate,
+        val percentageComplete: Double = 0.0,
+        val requestedAmount: Amount<Currency> = 0.POUNDS, //amount as per invoice/payment application from the contractor
+        val paymentOnAccount: Amount<Currency> = 0.POUNDS, //how much payment on account has been paid out (payment valuation)
+        val netMilestonePayment: Amount<Currency> = 0.POUNDS, //calculated based on milestone amount/payment on account less retention percentage
+        val documentsRequired : List<SecureHash> = listOf<SecureHash>(),
+        val remarks: String,
         val status: MilestoneStatus = MilestoneStatus.NOT_STARTED)
 
 @CordaSerializable
