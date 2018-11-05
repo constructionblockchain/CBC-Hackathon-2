@@ -47,7 +47,7 @@ class FlowController(rpc: NodeRPCConnection) {
             val expectedEndDate = LocalDate.parse(expectedEndDateString, DateTimeFormatter.ISO_DATE)
             val amount = Amount(quantity.toLong(), Currency.getInstance(milestone["currency"]))
             val remarks = milestone["remarks"].toString()
-            Milestone(reference, description, amount, expectedEndDate, remarks)
+            Milestone(reference=reference, description=description, amount=amount, expectedEndDate=expectedEndDate, remarks=remarks)
         }
 
         val contractor = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(contractorName))
