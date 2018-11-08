@@ -22,7 +22,8 @@ class AcceptMilestoneCommandTests {
         description = "Fit windows.",
         amount = 100.DOLLARS,
         expectedEndDate = LocalDate.now(),
-        remarks = "No remarks")
+        remarks = "No remarks",
+        status = MilestoneStatus.COMPLETED)
     private val acceptedMilestone = completedMilestone.copy(status = MilestoneStatus.ACCEPTED)
     private val otherMilestone = Milestone(
         reference = "M2",

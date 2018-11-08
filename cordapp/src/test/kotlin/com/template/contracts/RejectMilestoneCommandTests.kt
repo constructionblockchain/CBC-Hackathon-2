@@ -24,7 +24,8 @@ class RejectMilestoneCommandTests {
             description = "Fit windows.",
             amount =  100.DOLLARS,
             expectedEndDate = LocalDate.now(),
-            remarks = "No remarks.")
+            remarks = "No remarks.",
+            status = MilestoneStatus.COMPLETED)
     private val startedMilestone = completedMilestone.copy(status = MilestoneStatus.STARTED)
     private val otherMilestone = Milestone(reference = "M2",
             description = "Fit doors.",
@@ -32,7 +33,7 @@ class RejectMilestoneCommandTests {
             expectedEndDate = LocalDate.now(),
             remarks = "No remarks.")
     private val completedJobState = JobState(
-            milestones = listOf(startedMilestone, otherMilestone),
+            milestones = listOf(completedMilestone, otherMilestone),
             developer = developer.party,
             contractor = contractor.party,
             allowPaymentOnAccount = true,
