@@ -13,19 +13,32 @@ import net.corda.testing.node.MockServices
 import net.corda.testing.node.ledger
 import org.apache.shiro.authc.Account
 import org.junit.Test
+import java.time.LocalDate
 
 class RejectMilestoneCommandTests {
     private val ledgerServices = MockServices(listOf("com.template"))
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
     private val participants = listOf(developer.publicKey)
-    private val completedMilestone = Milestone("Fit windows.", 100.DOLLARS, MilestoneStatus.COMPLETED)
+    private val completedMilestone = Milestone(reference = "M1",
+            description = "Fit windows.",
+            amount =  100.DOLLARS,
+            expectedEndDate = LocalDate.now(),
+            remarks = "No remarks.",
+            status = MilestoneStatus.COMPLETED)
     private val startedMilestone = completedMilestone.copy(status = MilestoneStatus.STARTED)
-    private val otherMilestone = Milestone("Fit doors", 50.DOLLARS)
+    private val otherMilestone = Milestone(reference = "M2",
+            description = "Fit doors.",
+            amount =  50.DOLLARS,
+            expectedEndDate = LocalDate.now(),
+            remarks = "No remarks.")
     private val completedJobState = JobState(
-        milestones = listOf(completedMilestone, otherMilestone),
-        developer = developer.party,
-        contractor = contractor.party
+            milestones = listOf(completedMilestone, otherMilestone),
+            developer = developer.party,
+            contractor = contractor.party,
+            allowPaymentOnAccount = true,
+            contractAmount = 100.0,
+            retentionPercentage = 5.0
     )
     private val startedJobState = completedJobState.copy(
         milestones = listOf(startedMilestone, otherMilestone))

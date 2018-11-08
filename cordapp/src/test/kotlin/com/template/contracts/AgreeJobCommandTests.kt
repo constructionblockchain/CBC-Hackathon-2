@@ -10,17 +10,27 @@ import net.corda.testing.core.TestIdentity
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.ledger
 import org.junit.Test
+import java.time.LocalDate
 
 class AgreeJobCommandTests {
     private val ledgerServices = MockServices(listOf("com.template"))
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
-    private val milestone = Milestone("Fit windows.", 100.DOLLARS)
+    private val milestone = Milestone(reference="M1",
+                                      description = "Fit windows.",
+                                      amount = 100.DOLLARS,
+                                      expectedEndDate = LocalDate.now(),
+                                      percentageComplete = 50.0,
+                                      requestedAmount = 100.DOLLARS,
+                                      remarks = "No remarks")
     private val participants = listOf(developer.publicKey, contractor.publicKey)
     private val jobState = JobState(
-        milestones = listOf(milestone),
         developer = developer.party,
-        contractor = contractor.party
+        contractor = contractor.party,
+        contractAmount = 150.0,
+        retentionPercentage = 5.0,
+        allowPaymentOnAccount = true,
+        milestones = listOf(milestone)
     )
 
     @Test

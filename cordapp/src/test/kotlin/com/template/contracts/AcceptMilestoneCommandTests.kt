@@ -4,27 +4,40 @@ import com.template.JobContract
 import com.template.JobState
 import com.template.Milestone
 import com.template.MilestoneStatus
-import net.corda.core.contracts.Amount
 import net.corda.core.identity.CordaX500Name
 import net.corda.finance.DOLLARS
-import net.corda.finance.GBP
 import net.corda.testing.core.TestIdentity
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.ledger
 import org.junit.Test
+import java.time.LocalDate
 
 class AcceptMilestoneCommandTests {
     private val ledgerServices = MockServices(listOf("com.template"))
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
     private val participants = listOf(developer.publicKey)
-    private val completedMilestone = Milestone("Fit windows.", 100.DOLLARS,  MilestoneStatus.COMPLETED)
+    private val completedMilestone = Milestone(
+        reference = "M1",
+        description = "Fit windows.",
+        amount = 100.DOLLARS,
+        expectedEndDate = LocalDate.now(),
+        remarks = "No remarks",
+        status = MilestoneStatus.COMPLETED)
     private val acceptedMilestone = completedMilestone.copy(status = MilestoneStatus.ACCEPTED)
-    private val otherMilestone = Milestone("Fit doors", 50.DOLLARS)
+    private val otherMilestone = Milestone(
+        reference = "M2",
+        description = "Fit doors.",
+        amount = 50.DOLLARS,
+        expectedEndDate = LocalDate.now(),
+        remarks = "No remarks")
     private val completedJobState = JobState(
-        milestones = listOf(completedMilestone, otherMilestone),
         developer = developer.party,
-        contractor = contractor.party
+        contractor = contractor.party,
+        contractAmount = 150.00,
+        retentionPercentage = 5.0,
+        allowPaymentOnAccount = true,
+        milestones = listOf(completedMilestone, otherMilestone)
     )
     private val acceptedJobState = completedJobState.copy(
         milestones = listOf(acceptedMilestone, otherMilestone))

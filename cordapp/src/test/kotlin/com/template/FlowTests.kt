@@ -9,6 +9,7 @@ import net.corda.testing.node.MockNetwork
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.time.LocalDate
 import kotlin.test.assertEquals
 
 class FlowTests {
@@ -16,11 +17,17 @@ class FlowTests {
     private val a = network.createNode()
     private val b = network.createNode()
 
-    private val milestoneNames = listOf("Fit some windows.", "Build some walls.", "Add a doorbell.")
+    private val milestoneReference = listOf("Fit some windows.", "Build some walls.", "Add a doorbell.")
     private val milestoneAmounts = listOf(100.DOLLARS, 500.DOLLARS, 50.DOLLARS)
 
-    private val milestones = milestoneNames.zip(milestoneAmounts).map { (name, amount) ->
-        Milestone(name, amount)
+    private val milestones = milestoneReference.zip(milestoneAmounts).map { (reference, amount) ->
+        Milestone(reference = reference,
+            amount = amount,
+            description = "Fit windows.",
+            expectedEndDate = LocalDate.now(),
+            percentageComplete = 50.0,
+            requestedAmount = amount,
+            remarks = "No remarks")
     }
 
     private val milestoneIndex = 0
@@ -36,7 +43,12 @@ class FlowTests {
     fun tearDown() = network.stopNodes()
 
     fun agreeJob(): UniqueIdentifier {
-        val flow = AgreeJobFlow(milestones, b.info.chooseIdentity(), notaryToUse = network.defaultNotaryIdentity)
+        val flow = AgreeJobFlow(contractor = b.info.chooseIdentity(),
+                                contractAmount = 100.0,
+                                retentionPercentage = 5.0,
+                                allowPaymentOnAccount = true,
+                                milestones = milestones,
+                                notaryToUse = network.defaultNotaryIdentity)
 
         val resultFuture = a.startFlow(flow)
         network.runNetwork()
@@ -115,7 +127,7 @@ class FlowTests {
 
                 val milestonesState = jobState.milestones
                 val milestoneStarted = milestonesState[milestoneIndex]
-                assertEquals(milestoneNames, milestonesState.map { it.description })
+                assertEquals(milestoneReference, milestonesState.map { it.description })
                 assertEquals(milestoneAmounts, milestonesState.map { it.amount })
                 assertEquals(MilestoneStatus.STARTED, milestoneStarted.status)
 
@@ -143,7 +155,7 @@ class FlowTests {
 
                 val milestonesState = jobState.milestones
                 val milestoneStarted = milestonesState[milestoneIndex]
-                assertEquals(milestoneNames, milestonesState.map { it.description })
+                assertEquals(milestoneReference, milestonesState.map { it.description })
                 assertEquals(milestoneAmounts, milestonesState.map { it.amount })
                 assertEquals(MilestoneStatus.COMPLETED, milestoneStarted.status)
 
