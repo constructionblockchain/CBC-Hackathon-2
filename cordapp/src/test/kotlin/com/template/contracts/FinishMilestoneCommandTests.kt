@@ -4,27 +4,44 @@ import com.template.JobContract
 import com.template.JobState
 import com.template.Milestone
 import com.template.MilestoneStatus
-import net.corda.core.contracts.Amount
 import net.corda.core.identity.CordaX500Name
 import net.corda.finance.DOLLARS
-import net.corda.finance.GBP
 import net.corda.testing.core.TestIdentity
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.ledger
 import org.junit.Test
+import java.time.LocalDate
 
 class FinishMilestoneCommandTests {
     private val ledgerServices = MockServices(listOf("com.template"))
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
     private val participants = listOf(contractor.publicKey)
-    private val startedMilestone = Milestone("Fit windows.", 100.DOLLARS, MilestoneStatus.STARTED)
+    private val startedMilestone = Milestone(
+        reference="M1",
+        description = "Fit windows.",
+        amount = 100.DOLLARS,
+        expectedEndDate = LocalDate.now(),
+        percentageComplete = 50.0,
+        requestedAmount = 100.DOLLARS,
+        remarks = "No remarks",
+        status = MilestoneStatus.STARTED)
     private val completedMilestone = startedMilestone.copy(status = MilestoneStatus.COMPLETED)
-    private val otherMilestone = Milestone("Fit doors", 50.DOLLARS)
+    private val otherMilestone = Milestone(
+        reference="M1",
+        description = "Fit windows.",
+        amount = 100.DOLLARS,
+        expectedEndDate = LocalDate.now(),
+        percentageComplete = 50.0,
+        requestedAmount = 100.DOLLARS,
+        remarks = "No remarks")
     private val startedJobState = JobState(
-        milestones = listOf(startedMilestone, otherMilestone),
         developer = developer.party,
-        contractor = contractor.party
+        contractor = contractor.party,
+        contractAmount = 150.0,
+        retentionPercentage = 5.0,
+        allowPaymentOnAccount = true,
+        milestones = listOf(startedMilestone, otherMilestone)
     )
     private val completedJobState = startedJobState.copy(
         milestones = listOf(completedMilestone, otherMilestone))
