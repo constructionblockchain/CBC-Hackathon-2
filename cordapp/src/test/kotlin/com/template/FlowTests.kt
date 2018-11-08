@@ -17,13 +17,13 @@ class FlowTests {
     private val a = network.createNode()
     private val b = network.createNode()
 
-    private val milestoneReference = listOf("Fit some windows.", "Build some walls.", "Add a doorbell.")
+    private val milestoneDescriptions = listOf("Fit some windows.", "Build some walls.", "Add a doorbell.")
     private val milestoneAmounts = listOf(100.DOLLARS, 500.DOLLARS, 50.DOLLARS)
 
-    private val milestones = milestoneReference.zip(milestoneAmounts).map { (reference, amount) ->
-        Milestone(reference = reference,
+    private val milestones = milestoneDescriptions.zip(milestoneAmounts).map { (description, amount) ->
+        Milestone(reference = description,
             amount = amount,
-            description = "Fit windows.",
+            description = description,
             expectedEndDate = LocalDate.now(),
             percentageComplete = 50.0,
             requestedAmount = amount,
@@ -127,7 +127,7 @@ class FlowTests {
 
                 val milestonesState = jobState.milestones
                 val milestoneStarted = milestonesState[milestoneIndex]
-                assertEquals(milestoneReference, milestonesState.map { it.description })
+                assertEquals(milestoneDescriptions, milestonesState.map { it.description })
                 assertEquals(milestoneAmounts, milestonesState.map { it.amount })
                 assertEquals(MilestoneStatus.STARTED, milestoneStarted.status)
 
@@ -155,7 +155,7 @@ class FlowTests {
 
                 val milestonesState = jobState.milestones
                 val milestoneStarted = milestonesState[milestoneIndex]
-                assertEquals(milestoneReference, milestonesState.map { it.description })
+                assertEquals(milestoneDescriptions, milestonesState.map { it.description })
                 assertEquals(milestoneAmounts, milestonesState.map { it.amount })
                 assertEquals(MilestoneStatus.COMPLETED, milestoneStarted.status)
 
