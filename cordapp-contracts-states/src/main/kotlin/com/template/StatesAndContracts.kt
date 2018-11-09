@@ -343,6 +343,10 @@ class JobContract : Contract {
                         (outputModifiedMilestone.status == MilestoneStatus.STARTED)
                 "The modified milestone's description and amount shouldn't change." using
                         (inputModifiedMilestone.copy(status = MilestoneStatus.STARTED) == outputModifiedMilestone)
+                "All tasks should have output status of STARTED" using
+                        (outputModifiedMilestone.tasks.isEmpty() || outputModifiedMilestone.tasks.all{
+                            it.status == TaskStatus.STARTED
+                        })
 
                 val otherInputMilestones = jobInput.milestones.minusElement(inputModifiedMilestone)
                 val otherOutputMilestones = jobOutput.milestones.minusElement(outputModifiedMilestone)
