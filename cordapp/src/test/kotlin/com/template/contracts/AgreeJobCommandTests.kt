@@ -3,9 +3,12 @@ package com.template.contracts
 import com.template.JobContract
 import com.template.JobState
 import com.template.Milestone
+import com.template.Task
 import com.template.MilestoneStatus
+import com.template.TaskStatus
 import net.corda.core.identity.CordaX500Name
 import net.corda.finance.DOLLARS
+import net.corda.finance.POUNDS
 import net.corda.testing.core.TestIdentity
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.ledger
@@ -16,13 +19,30 @@ class AgreeJobCommandTests {
     private val ledgerServices = MockServices(listOf("com.template"))
     private val developer = TestIdentity(CordaX500Name("John Doe", "City", "GB"))
     private val contractor = TestIdentity(CordaX500Name("Richard Roe", "Town", "GB"))
+    private val unstartedTask = Task(
+        reference = "T1",
+        description = "Procure glass",
+        amount = 80.DOLLARS,
+        expectedStartDate = LocalDate.now(),
+        expectedDuration = 3,
+        remarks = "No remarks"
+    )
+    private val unstartedTaskTwo = Task(
+        reference = "T2",
+        description = "Install glass",
+        amount = 20.DOLLARS,
+        expectedStartDate = LocalDate.now().plusDays(3),
+        expectedDuration = 2,
+        remarks = "No remarks"
+    )
     private val milestone = Milestone(reference="M1",
                                       description = "Fit windows.",
                                       amount = 100.DOLLARS,
-                                      expectedEndDate = LocalDate.now(),
+                                      expectedEndDate = LocalDate.now().plusDays(5),
                                       percentageComplete = 50.0,
                                       requestedAmount = 100.DOLLARS,
-                                      remarks = "No remarks")
+                                      remarks = "No remarks",
+                                      tasks = listOf(unstartedTask, unstartedTaskTwo))
     private val participants = listOf(developer.publicKey, contractor.publicKey)
     private val jobState = JobState(
         developer = developer.party,
@@ -95,6 +115,96 @@ class AgreeJobCommandTests {
                 output(JobContract.ID, jobState.copy(
                         milestones = listOf(milestone, milestone.copy(status = MilestoneStatus.STARTED))))
                 failsWith("All the milestones should be unstarted.")
+            }
+        }
+    }
+
+    @Test
+    fun `All tasks should be unstarted`() {
+        ledgerServices.ledger {
+            // A single started task.
+            transaction {
+                command(participants, JobContract.Commands.AgreeJob())
+                output(JobContract.ID, jobState.copy(
+                    milestones = listOf(milestone.copy(tasks = listOf(unstartedTask.copy(status=TaskStatus.STARTED))))))
+                failsWith("All tasks should be unstarted.")
+            }
+            // An unstarted task first, followed by a started task.
+            transaction {
+                command(participants, JobContract.Commands.AgreeJob())
+                output(JobContract.ID, jobState.copy(
+                    milestones = listOf(milestone, milestone.copy(
+                        tasks = listOf(unstartedTask.copy(status=TaskStatus.STARTED),
+                                       unstartedTaskTwo)))))
+                failsWith("All tasks should be unstarted.")
+            }
+        }
+    }
+
+    @Test
+    fun `All tasks should be of the same currency`() {
+        ledgerServices.ledger {
+            transaction {
+                command(participants, JobContract.Commands.AgreeJob())
+                output(JobContract.ID, jobState.copy(
+                    milestones = listOf(milestone, milestone.copy(
+                        tasks = listOf(unstartedTask.copy(amount = 80.POUNDS),
+                                       unstartedTaskTwo)))))
+                failsWith("All tasks should be of the same currency.")
+            }
+        }
+    }
+
+    @Test
+    fun `The total amount of each milestone should be equal to the accumulated amount of all tasks`() {
+        ledgerServices.ledger {
+            transaction {
+                command(participants, JobContract.Commands.AgreeJob())
+                output(JobContract.ID, jobState.copy(
+                    milestones = listOf(
+                        milestone.copy(
+                            tasks = listOf(
+                                unstartedTask.copy(amount = 180.DOLLARS),
+                                unstartedTaskTwo
+                            )
+                        )
+                    )
+                ))
+                failsWith("The total amount of each milestone should be equal to the accumulated amount of all tasks.")
+            }
+        }
+    }
+
+    @Test
+    fun `Expected end date of each milestone should be equal to the expected end date of the last task`() {
+        ledgerServices.ledger {
+            transaction {
+                command(participants, JobContract.Commands.AgreeJob())
+                output(JobContract.ID, jobState.copy(
+                    milestones = listOf(
+                        milestone.copy(
+                            tasks = listOf(
+                                unstartedTask.copy(expectedStartDate = LocalDate.now().plusDays(6)),
+                                unstartedTaskTwo
+                            )
+                        )
+                    )
+                ))
+                failsWith("Expected end date of each milestone should be equal to the expected end date of the last task.")
+            }
+            transaction {
+                command(participants, JobContract.Commands.AgreeJob())
+                output(JobContract.ID, jobState.copy(
+                    milestones = listOf(
+                        milestone.copy(
+                            tasks = listOf(
+                                unstartedTask.copy(expectedStartDate = LocalDate.now(), expectedDuration = 6),
+                                unstartedTaskTwo
+                            )
+                        )
+                    )
+                ))
+                failsWith("Expected end date of each milestone should be equal to the expected end date of the last task.")
             }
         }
     }
