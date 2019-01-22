@@ -1,4 +1,4 @@
-# CBC Hackathon 1
+# CBC Hackathon 2
 
 ## Overview
 
