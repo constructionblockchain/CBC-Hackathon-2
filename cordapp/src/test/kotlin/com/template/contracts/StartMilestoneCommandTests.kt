@@ -4,6 +4,7 @@ import com.template.JobContract
 import com.template.JobState
 import com.template.Milestone
 import com.template.MilestoneStatus
+import com.template.Task
 import net.corda.core.identity.CordaX500Name
 import net.corda.finance.DOLLARS
 import net.corda.testing.core.TestIdentity
@@ -38,6 +39,15 @@ class StartMilestoneCommandTests {
     )
     private val startedJobState = unstartedJobState.copy(milestones = listOf(milestoneOne, milestoneTwoStarted))
     private val milestoneIndex = 1
+    private val task = Task(
+        reference = "T1",
+        description = "Procure glass",
+        amount = 100.DOLLARS,
+        expectedStartDate = LocalDate.now().minusDays(1),
+        expectedDuration = 1,
+        remarks = "No remarks"
+    )
+    private val milestoneWithTask = milestoneTwo.copy(tasks = listOf(task))
 
     @Test
     fun `StartMilestone command should complete successfully`() {
@@ -83,6 +93,20 @@ class StartMilestoneCommandTests {
                 output(JobContract.ID, startedJobState)
                 output(JobContract.ID, startedJobState)
                 failsWith("One JobState output should be produced.")
+            }
+        }
+    }
+
+    @Test
+    fun `Cannot start a milestone if it has tasks`() {
+        ledgerServices.ledger {
+            transaction {
+                command(participants, JobContract.Commands.StartMilestone(milestoneIndex))
+                input(JobContract.ID, unstartedJobState.copy(milestones = listOf(milestoneOne, milestoneWithTask)))
+                output(JobContract.ID, startedJobState.copy(milestones = listOf(
+                    milestoneOne,
+                    milestoneWithTask.copy(status = MilestoneStatus.STARTED))))
+                failsWith("Cannot start a milestone if it has tasks.")
             }
         }
     }

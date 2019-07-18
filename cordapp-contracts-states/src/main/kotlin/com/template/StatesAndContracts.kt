@@ -58,12 +58,28 @@ data class Milestone(
         val requestedAmount: Amount<Currency> = 0.POUNDS, //amount as per invoice/payment application from the contractor
         val paymentOnAccount: Amount<Currency> = 0.POUNDS, //how much payment on account has been paid out (payment valuation)
         val netMilestonePayment: Amount<Currency> = 0.POUNDS, //calculated based on milestone amount/payment on account less retention percentage
-        val documentsRequired : List<SecureHash> = listOf<SecureHash>(),
+        val documentsRequired : List<SecureHash> = listOf(),
         val remarks: String,
-        val status: MilestoneStatus = MilestoneStatus.NOT_STARTED)
+        val status: MilestoneStatus = MilestoneStatus.NOT_STARTED,
+        val tasks: List<Task> = emptyList())
+
+@CordaSerializable
+data class Task(
+        val reference: String,
+        val description: String,
+        val amount: Amount<Currency>,
+        val expectedStartDate: LocalDate,
+        val expectedDuration: Long,
+        val requestedAmount: Amount<Currency> = 0.POUNDS, //amount as per invoice/payment application from the contractor
+        val documentsRequired : List<SecureHash> = listOf(),
+        val remarks: String,
+        val status: TaskStatus = TaskStatus.NOT_STARTED)
 
 @CordaSerializable
 enum class MilestoneStatus { NOT_STARTED, STARTED, COMPLETED, ACCEPTED, PAID, ON_ACCOUNT_PAYMENT }
+
+@CordaSerializable
+enum class TaskStatus { NOT_STARTED, STARTED, COMPLETED, ACCEPTED }
 
 @CordaSerializable
 data class DocumentState(
@@ -111,8 +127,10 @@ class JobContract : Contract {
 
     interface Commands : CommandData {
         class AgreeJob : Commands
+        class StartTask(val milestoneIndex: Int, val taskIndex: Int) : Commands
         // `milestoneIndex` is the index of the milestone being updated in the list of milestones.
         class StartMilestone(val milestoneIndex: Int) : Commands
+        class FinishTask(val milestoneIndex: Int, val taskIndex: Int) : Commands
         class FinishMilestone(val milestoneIndex: Int) : Commands
         class RejectMilestone(val milestoneIndex: Int) : Commands
         class AcceptMilestone(val milestoneIndex: Int) : Commands
@@ -134,6 +152,83 @@ class JobContract : Contract {
                 "All the milestones should be unstarted." using
                         (jobOutput.milestones.all { it.status == MilestoneStatus.NOT_STARTED })
 
+                "All tasks should be unstarted." using
+                        (jobOutput.milestones.all { it ->
+                            it.tasks.all {
+                                it.status == TaskStatus.NOT_STARTED
+                            }
+                        })
+
+                "All tasks should be of the same currency." using
+                        jobOutput.milestones.all{ milestone ->
+                            milestone.tasks.isEmpty() || milestone.tasks.distinctBy { it.amount.token }.size == 1
+                        }
+
+                "The total amount of each milestone should be equal to the accumulated amount of all tasks." using
+                        (jobOutput.milestones.all { milestone ->
+                            milestone.tasks.isEmpty() ||
+                            (milestone.amount.quantity == milestone.tasks.sumByLong { it.amount.quantity } &&
+                             milestone.amount.token == milestone.tasks.first().amount.token)
+                        })
+
+                fun checkTaskDates(expectedEndDate: LocalDate, tasks: List<Task>): Boolean {
+                    var latest = LocalDate.MIN
+
+                    tasks.forEach { task ->
+                        val date = task.expectedStartDate.plusDays(task.expectedDuration)
+                        if (date > latest) latest = date
+                    }
+
+                    return expectedEndDate == latest
+                }
+
+                "Expected end date of each milestone should be equal to the expected end date of the last task." using
+                        (jobOutput.milestones.all {
+                            it.tasks.isEmpty() || checkTaskDates(it.expectedEndDate, it.tasks)
+                        })
+
+                "The developer and contractor should be required signers." using
+                        (jobCommand.signers.containsAll(listOf(jobOutput.contractor.owningKey, jobOutput.developer.owningKey)))
+            }
+
+            is Commands.StartTask -> requireThat {
+                "One JobState input should be consumed." using (jobInputs.size == 1)
+                "One JobState output should be produced." using (jobOutputs.size == 1)
+
+                val jobInput = jobInputs.single()
+                val jobOutput = jobOutputs.single()
+                val milestoneIndex = (jobCommand.value as Commands.StartTask).milestoneIndex
+                val taskIndex = (jobCommand.value as Commands.StartTask).taskIndex
+
+                val inputModifiedMilestone = jobInput.milestones[milestoneIndex]
+                val outputModifiedMilestone = jobOutput.milestones[milestoneIndex]
+                val inputModifiedTask = jobInput.milestones[milestoneIndex].tasks[taskIndex]
+                val outputModifiedTask = jobOutput.milestones[milestoneIndex].tasks[taskIndex]
+
+                "The modified task should have an input status of NOT_STARTED." using
+                        (inputModifiedTask.status == TaskStatus.NOT_STARTED)
+                "The modified task should have an output status of STARTED." using
+                        (outputModifiedTask.status == TaskStatus.STARTED)
+                "Only the task status should change." using
+                        (inputModifiedTask.copy(status = TaskStatus.STARTED) == outputModifiedTask)
+
+                "The modified milestone should have an output status of STARTED." using
+                        (outputModifiedMilestone.status == MilestoneStatus.STARTED)
+                "The modified milestone's description and amount shouldn't change." using
+                        (inputModifiedMilestone.copy(status = MilestoneStatus.STARTED) == outputModifiedMilestone)
+
+                val otherInputTasks = jobInput.milestones.minusElement(inputModifiedTask)
+                val otherOutputTasks = jobOutput.milestones.minusElement(outputModifiedTask)
+
+                "All the other milestones should be unmodified." using
+                        (otherInputTasks == otherOutputTasks)
+
+                val otherInputMilestones = jobInput.milestones.minusElement(inputModifiedMilestone)
+                val otherOutputMilestones = jobOutput.milestones.minusElement(outputModifiedMilestone)
+
+                "All the other milestones should be unmodified." using
+                        (otherInputMilestones == otherOutputMilestones)
+
                 "The developer and contractor should be required signers." using
                         (jobCommand.signers.containsAll(listOf(jobOutput.contractor.owningKey, jobOutput.developer.owningKey)))
             }
@@ -147,6 +242,8 @@ class JobContract : Contract {
                 val milestoneIndex = (jobCommand.value as Commands.StartMilestone).milestoneIndex
                 val inputModifiedMilestone = jobInput.milestones[milestoneIndex]
                 val outputModifiedMilestone = jobOutput.milestones[milestoneIndex]
+
+                "Cannot start a milestone if it has tasks." using (inputModifiedMilestone.tasks.isEmpty())
 
                 "The modified milestone should have an input status of NOT_STARTED." using
                         (inputModifiedMilestone.status == MilestoneStatus.NOT_STARTED)
@@ -165,9 +262,46 @@ class JobContract : Contract {
                         (jobCommand.signers.containsAll(listOf(jobOutput.contractor.owningKey, jobOutput.developer.owningKey)))
             }
 
+            is Commands.FinishTask -> requireThat {
+                "One JobState input should be consumed." using (jobInputs.size == 1)
+                "One JobState output should be produced." using (jobOutputs.size == 1)
+
+                // TODO: Check dates
+
+                val jobInput = jobInputs.single()
+                val jobOutput = jobOutputs.single()
+                val taskIndex = (jobCommand.value as Commands.FinishTask).taskIndex
+                val milestoneIndex = (jobCommand.value as Commands.FinishMilestone).milestoneIndex
+                val inputModifiedTask = jobInput.milestones[milestoneIndex].tasks[taskIndex]
+                val outputModifiedTask = jobOutput.milestones[milestoneIndex].tasks[taskIndex]
+                val inputModifiedMilestone = jobInput.milestones[milestoneIndex]
+                val outputModifiedMilestone = jobOutput.milestones[milestoneIndex]
+
+                "The modified task should have an input status of STARTED." using
+                        (inputModifiedTask.status == TaskStatus.STARTED)
+                "The modified task should have an output status of COMPLETED." using
+                        (outputModifiedTask.status == TaskStatus.COMPLETED)
+                "Only the status of the task should change" using
+                        (inputModifiedTask.copy(status = TaskStatus.COMPLETED) == outputModifiedTask)
+
+                val otherInputTasks = inputModifiedMilestone.tasks.minusElement(inputModifiedTask)
+                val otherOutputTasks = outputModifiedMilestone.tasks.minusElement(outputModifiedTask)
+                val otherInputMilestones = jobInput.milestones.minusElement(inputModifiedMilestone)
+                val otherOutputMilestones = jobOutput.milestones.minusElement(outputModifiedMilestone)
+
+                "All other tasks should be unmodified" using
+                        (otherInputTasks == otherOutputTasks)
+                "All the other milestones should be unmodified." using
+                        (otherInputMilestones == otherOutputMilestones)
+
+                "The contractor should be a required signer." using (jobCommand.signers.contains(jobOutputs.single().contractor.owningKey))
+            }
+
             is Commands.FinishMilestone -> requireThat {
                 "One JobState input should be consumed." using (jobInputs.size == 1)
                 "One JobState output should be produced." using (jobOutputs.size == 1)
+
+                // TODO: Check dates
 
                 val jobInput = jobInputs.single()
                 val jobOutput = jobOutputs.single()
@@ -175,6 +309,8 @@ class JobContract : Contract {
                 val inputModifiedMilestone = jobInput.milestones[milestoneIndex]
                 val outputModifiedMilestone = jobOutput.milestones[milestoneIndex]
 
+                "All tasks should be finished" using
+                        (inputModifiedMilestone.tasks.all { it.status == TaskStatus.COMPLETED })
                 "The modified milestone should have an input status of STARTED." using
                         (inputModifiedMilestone.status == MilestoneStatus.STARTED)
                 "The modified milestone should have an output status of COMPLETED." using
@@ -207,6 +343,10 @@ class JobContract : Contract {
                         (outputModifiedMilestone.status == MilestoneStatus.STARTED)
                 "The modified milestone's description and amount shouldn't change." using
                         (inputModifiedMilestone.copy(status = MilestoneStatus.STARTED) == outputModifiedMilestone)
+                "All tasks should have output status of STARTED" using
+                        (outputModifiedMilestone.tasks.isEmpty() || outputModifiedMilestone.tasks.all{
+                            it.status == TaskStatus.STARTED
+                        })
 
                 val otherInputMilestones = jobInput.milestones.minusElement(inputModifiedMilestone)
                 val otherOutputMilestones = jobOutput.milestones.minusElement(outputModifiedMilestone)
@@ -233,6 +373,10 @@ class JobContract : Contract {
                         (outputModifiedMilestone.status == MilestoneStatus.ACCEPTED)
                 "The modified milestone's description and amount shouldn't change." using
                         (inputModifiedMilestone.copy(status = MilestoneStatus.ACCEPTED) == outputModifiedMilestone)
+                "All tasks should have output status of ACCEPTED" using
+                        (outputModifiedMilestone.tasks.isEmpty() || outputModifiedMilestone.tasks.all{
+                            it.status == TaskStatus.ACCEPTED
+                        })
 
                 val otherInputMilestones = jobInput.milestones.minusElement(inputModifiedMilestone)
                 val otherOutputMilestones = jobOutput.milestones.minusElement(outputModifiedMilestone)
